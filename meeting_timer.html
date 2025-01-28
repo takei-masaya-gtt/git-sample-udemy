@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会議時間カウンター</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        .input-group label {
+            font-size: 14px;
+        }
+        .input-group input {
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .button-group button {
+            font-size: 14px;
+            margin: 0 5px;
+        }
+        .output-group {
+            margin-top: 20px;
+            font-size: 14px;
+            border: 1px solid #000;
+            padding: 10px;
+            width: 300px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-group">
+            <label for="time">時間 (分):</label>
+            <input type="number" id="time" min="0">
+            <button onclick="increaseRate()">▲</button>
+            <button onclick="decreaseRate()">▼</button>
+        </div>
+        <div class="input-group">
+            <label for="rate">時給 (円):</label>
+            <input type="number" id="rate" min="0">
+            <button onclick="increaseRate()">▲</button>
+            <button onclick="decreaseRate()">▼</button>
+        </div>
+        <div class="input-group">
+            <label for="participants">参加人数:</label>
+            <input type="number" id="participants" min="0">
+            <button onclick="increaseParticipants()">▲</button>
+            <button onclick="decreaseParticipants()">▼</button>
+        </div>
+        <div class="button-group">
+            <button onclick="startCountdown()">開始</button>
+            <button onclick="stopCountdown()">停止</button>
+            <button onclick="resetCountdown()">リセット</button>
+            <button onclick="updateSettings()">更新</button>
+        </div>
+        <div class="output-group">
+            <div id="time-left">残り時間: 00:00</div>
+            <div id="elapsed-time">経過時間: 00:00</div>
+            <div id="cost">コスト: 0 円</div>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft = 0;
+        let rate = 0;
+        let participants = 0;
+        let running = false;
+        let startTime = 0;
+        let pausedTime = 0;
+        let updateId = null;
+        let totalCost = 0;
+
+        function startCountdown() {
+            if (!running) {
+                timeLeft = parseInt(document.getElementById('time').value) * 60 || timeLeft;
+                rate = parseInt(document.getElementById('rate').value) || rate;
+                participants = parseInt(document.getElementById('participants').value) || participants;
+                running = true;
+                startTime = Date.now() - pausedTime;
+                updateCountdown();
+            }
+        }
+
+        function stopCountdown() {
+            running = false;
+            pausedTime = Date.now() - startTime;
+            if (updateId) {
+                clearTimeout(updateId);
+                updateId = null;
+            }
+        }
+
+        function resetCountdown() {
+            running = false;
+            document.getElementById('time-left').textContent = "残り時間: 00:00";
+            document.getElementById('elapsed-time').textContent = "経過時間: 00:00";
+            document.getElementById('cost').textContent = "コスト: 0 円";
+            document.getElementById('time').value = "";
+            document.getElementById('rate').value = "";
+            document.getElementById('participants').value = "";
+            timeLeft = 0;
+            pausedTime = 0;
+            totalCost = 0;
+            if (updateId) {
+                clearTimeout(updateId);
+                updateId = null;
+            }
+        }
+
+        function updateSettings() {
+            rate = parseInt(document.getElementById('rate').value) || rate;
+            participants = parseInt(document.getElementById('participants').value) || participants;
+        }
+
+        function updateCountdown() {
+            if (running) {
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                document.getElementById('time-left').textContent = `残り時間: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+                const elapsedMins = Math.floor(elapsedTime / 60);
+                const elapsedSecs = elapsedTime % 60;
+                document.getElementById('elapsed-time').textContent = `経過時間: ${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}`;
+
+                if (timeLeft <= 0) {
+                    document.getElementById('elapsed-time').style.color = "red";
+                    document.getElementById('time-left').textContent = "残り時間: 00:00";
+                } else {
+                    document.getElementById('elapsed-time').style.color = "black";
+                }
+
+                totalCost = calculateCost(elapsedTime);
+                document.getElementById('cost').textContent = `コスト: ${totalCost.toFixed()} 円`;
+
+                timeLeft -= 1;
+                updateId = setTimeout(updateCountdown, 1000);
+            }
+        }
+
+        function calculateCost(elapsedTime) {
+            const elapsedHours = elapsedTime / 3600;
+            return Math.round(elapsedHours * rate * participants * 100) / 100;
+        }
+
+        function increaseRate() {
+            const rateInput = document.getElementById('rate');
+            rateInput.value = parseInt(rateInput.value) + 1 || 1;
+        }
+
+        function decreaseRate() {
+            const rateInput = document.getElementById('rate');
+            rateInput.value = Math.max(parseInt(rateInput.value) - 1, 0) || 0;
+        }
+
+        function increaseParticipants() {
+            const participantsInput = document.getElementById('participants');
+            participantsInput.value = parseInt(participantsInput.value) + 1 || 1;
+        }
+
+        function decreaseParticipants() {
+            const participantsInput = document.getElementById('participants');
+            participantsInput.value = Math.max(parseInt(participantsInput.value) - 1, 0) || 0;
+        }
+    </script>
+</body>
+</html>
