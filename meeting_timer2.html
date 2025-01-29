@@ -4,15 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>会議時間カウンター</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif;
+            font-weight: 900;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
             margin: 0;
+            font-size: 20px; /* 文字サイズを大きく */
         }
         .container {
             display: flex;
@@ -23,10 +27,10 @@
             margin-bottom: 10px;
         }
         .input-group label {
-            font-size: 14px;
+            font-size: 18px; /* 文字サイズを大きく */
         }
         .input-group input {
-            font-size: 14px;
+            font-size: 18px; /* 文字サイズを大きく */
             margin-left: 10px;
         }
         .button-group {
@@ -35,16 +39,26 @@
             margin-top: 10px;
         }
         .button-group button {
-            font-size: 14px;
+            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif; /* フォントを合わせる */
+            font-size: 18px; /* 文字サイズを大きく */
             margin: 0 5px;
         }
         .output-group {
             margin-top: 20px;
-            font-size: 14px;
+            font-size: 18px; /* 文字サイズを大きく */
             border: 1px solid #000;
             padding: 10px;
             width: 300px;
             text-align: center;
+            background-color: #000; /* 背景色を黒に */
+            color: #FFD700; /* 文字色を黄に */
+        }
+        .seven-segment {
+            font-family: 'Orbitron', monospace; /* 電卓風フォントを適用 */
+            font-size: 24px; /* 文字サイズを調整 */
+        }
+        .japanese-text {
+            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif; /* 日本語フォントを適用 */
         }
     </style>
 </head>
@@ -53,8 +67,8 @@
         <div class="input-group">
             <label for="time">時間 (分):</label>
             <input type="number" id="time" min="0">
-            <button onclick="increasetime()">▲</button>
-            <button onclick="decreasetime()">▼</button>
+            <button onclick="increaseTime()">▲</button>
+            <button onclick="decreaseTime()">▼</button>
         </div>
         <div class="input-group">
             <label for="rate">時給 (円):</label>
@@ -75,9 +89,9 @@
             <button onclick="updateSettings()">更新</button>
         </div>
         <div class="output-group">
-            <div id="time-left">残り時間: 00:00</div>
-            <div id="elapsed-time">経過時間: 00:00</div>
-            <div id="cost">コスト: 0 円</div>
+            <div id="time-left"><span class="japanese-text">残り時間: </span><span class="seven-segment">00:00</span></div>
+            <div id="elapsed-time"><span class="japanese-text">経過時間: </span><span class="seven-segment">00:00</span></div>
+            <div id="cost"><span class="japanese-text">コスト: </span><span class="seven-segment">0</span><span class="japanese-text"> 円</span></div>
         </div>
     </div>
 
@@ -113,9 +127,9 @@
 
         function resetCountdown() {
             running = false;
-            document.getElementById('time-left').textContent = "残り時間: 00:00";
-            document.getElementById('elapsed-time').textContent = "経過時間: 00:00";
-            document.getElementById('cost').textContent = "コスト: 0 円";
+            document.getElementById('time-left').innerHTML = '<span class="japanese-text">残り時間: </span><span class="seven-segment">00:00</span>';
+            document.getElementById('elapsed-time').innerHTML = '<span class="japanese-text">経過時間: </span><span class="seven-segment">00:00</span>';
+            document.getElementById('cost').innerHTML = '<span class="japanese-text">コスト: </span><span class="seven-segment">0</span><span class="japanese-text"> 円</span>';
             document.getElementById('time').value = "";
             document.getElementById('rate').value = "";
             document.getElementById('participants').value = "";
@@ -137,22 +151,22 @@
             if (running) {
                 const mins = Math.floor(timeLeft / 60);
                 const secs = timeLeft % 60;
-                document.getElementById('time-left').textContent = `残り時間: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                document.getElementById('time-left').innerHTML = `<span class="japanese-text">残り時間: </span><span class="seven-segment">${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}</span>`;
 
                 const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
                 const elapsedMins = Math.floor(elapsedTime / 60);
                 const elapsedSecs = elapsedTime % 60;
-                document.getElementById('elapsed-time').textContent = `経過時間: ${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}`;
+                document.getElementById('elapsed-time').innerHTML = `<span class="japanese-text">経過時間: </span><span class="seven-segment">${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}</span>`;
 
                 if (timeLeft <= 0) {
                     document.getElementById('elapsed-time').style.color = "red";
-                    document.getElementById('time-left').textContent = "残り時間: 00:00";
+                    document.getElementById('time-left').innerHTML = '<span class="japanese-text">残り時間: </span><span class="seven-segment">00:00</span>';
                 } else {
-                    document.getElementById('elapsed-time').style.color = "black";
+                    document.getElementById('elapsed-time').style.color = "Yellow";
                 }
 
                 totalCost = calculateCost(elapsedTime);
-                document.getElementById('cost').textContent = `コスト: ${totalCost.toFixed()} 円`;
+                document.getElementById('cost').innerHTML = `<span class="japanese-text">コスト: </span><span class="seven-segment">${totalCost.toFixed()}</span><span class="japanese-text"> 円</span>`;
 
                 timeLeft -= 1;
                 updateId = setTimeout(updateCountdown, 1000);
@@ -160,8 +174,17 @@
         }
 
         function calculateCost(elapsedTime) {
-            const elapsedHours = elapsedTime / 3600;
-            return Math.round(elapsedHours * rate * participants * 100) / 100;
+            return (rate / 3600) * elapsedTime * participants;
+        }
+
+        function increaseTime() {
+            const rateInput = document.getElementById('time');
+            rateInput.value = parseInt(rateInput.value) + 1 || 1;
+        }
+
+        function decreaseTime() {
+            const rateInput = document.getElementById('time');
+            rateInput.value = Math.max(parseInt(rateInput.value) - 1, 0) || 0;
         }
 
         function increaseRate() {
