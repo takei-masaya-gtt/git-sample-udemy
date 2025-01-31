@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>会議時間カウンター</title>
+    <title>時is銭</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
@@ -16,7 +16,7 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            font-size: 20px; /* 文字サイズを大きく */
+            font-size: 24px; /* 文字サイズを大きく */
         }
         .container {
             display: flex;
@@ -27,10 +27,10 @@
             margin-bottom: 10px;
         }
         .input-group label {
-            font-size: 18px; /* 文字サイズを大きく */
+            font-size: 18px; /* 文字サイズを少し小さく */
         }
         .input-group input {
-            font-size: 18px; /* 文字サイズを大きく */
+            font-size: 18px; /* 文字サイズを少し小さく */
             margin-left: 10px;
         }
         .button-group {
@@ -40,30 +40,52 @@
         }
         .button-group button {
             font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif; /* フォントを合わせる */
-            font-size: 18px; /* 文字サイズを大きく */
+            font-size: 18px; /* 文字サイズを少し小さく */
             margin: 0 5px;
         }
         .output-group {
             margin-top: 20px;
-            font-size: 18px; /* 文字サイズを大きく */
+            font-size: 24px; /* 文字サイズを大きく */
             border: 1px solid #000;
             padding: 10px;
-            width: 300px;
-            text-align: center;
+            width: 400px; /* 幅を広げる */
+            text-align: left;
             background-color: #000; /* 背景色を黒に */
             color: #FFD700; /* 文字色を黄に */
         }
         .seven-segment {
             font-family: 'Orbitron', monospace; /* 電卓風フォントを適用 */
-            font-size: 24px; /* 文字サイズを調整 */
+            font-size: 32px; /* 文字サイズを調整 */
         }
         .japanese-text {
             font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif; /* 日本語フォントを適用 */
+        }
+        .output-group div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px; /* 項目間のスペースを狭める */
+        }
+        .output-group span {
+            display: inline-block;
+            width: 150px; /* 固定幅を設定して位置を固定 */
+        }
+        .output-group .cost {
+            text-align: right; /* 右端を揃える */
+            width: 200px; /* 幅を広げる */
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="input-group">
+            <label for="start-time">開始時間:</label>
+            <input type="time" id="start-time">
+        </div>
+        <div class="input-group">
+            <label for="end-time">終了時間:</label>
+            <input type="time" id="end-time">
+        </div>
         <div class="input-group">
             <label for="time">時間 (分):</label>
             <input type="number" id="time" min="0">
@@ -87,11 +109,13 @@
             <button onclick="stopCountdown()">停止</button>
             <button onclick="resetCountdown()">リセット</button>
             <button onclick="updateSettings()">更新</button>
+            <button onclick="openOutputWindow()">出力を別ウィンドウで開く</button>
         </div>
         <div class="output-group">
-            <div id="time-left"><span class="japanese-text">残り時間: </span><span class="seven-segment">00:00</span></div>
-            <div id="elapsed-time"><span class="japanese-text">経過時間: </span><span class="seven-segment">00:00</span></div>
-            <div id="cost"><span class="japanese-text">コスト: </span><span class="seven-segment">0</span><span class="japanese-text"> 円</span></div>
+            <div><span class="japanese-text">現在時刻: </span><span class="seven-segment" id="current-time">00:00:00</span></div>
+            <div><span class="japanese-text">残り時間: </span><span class="seven-segment" id="time-left">00:00</span></div>
+            <div><span class="japanese-text">経過時間: </span><span class="seven-segment" id="elapsed-time">00:00</span></div>
+            <div><span class="japanese-text">コスト: </span><span class="seven-segment cost" id="cost">0</span><span class="japanese-text"> 円</span></div>
         </div>
     </div>
 
@@ -104,10 +128,49 @@
         let pausedTime = 0;
         let updateId = null;
         let totalCost = 0;
+        let outputWindow = null;
+
+        function increaseTime() {
+            const timeInput = document.getElementById('time');
+            timeInput.value = parseInt(timeInput.value || 0) + 1;
+        }
+
+        function decreaseTime() {
+            const timeInput = document.getElementById('time');
+            timeInput.value = Math.max(0, parseInt(timeInput.value || 0) - 1);
+        }
+
+        function increaseRate() {
+            const rateInput = document.getElementById('rate');
+            rateInput.value = parseInt(rateInput.value || 0) + 100;
+        }
+
+        function decreaseRate() {
+            const rateInput = document.getElementById('rate');
+            rateInput.value = Math.max(0, parseInt(rateInput.value || 0) - 100);
+        }
+
+        function increaseParticipants() {
+            const participantsInput = document.getElementById('participants');
+            participantsInput.value = parseInt(participantsInput.value || 0) + 1;
+        }
+
+        function decreaseParticipants() {
+            const participantsInput = document.getElementById('participants');
+            participantsInput.value = Math.max(0, parseInt(participantsInput.value || 0) - 1);
+        }
 
         function startCountdown() {
             if (!running) {
-                timeLeft = parseInt(document.getElementById('time').value) * 60 || timeLeft;
+                const startTimeInput = document.getElementById('start-time').value;
+                const endTimeInput = document.getElementById('end-time').value;
+                if (startTimeInput && endTimeInput) {
+                    const start = new Date(`1970-01-01T${startTimeInput}:00`);
+                    const end = new Date(`1970-01-01T${endTimeInput}:00`);
+                    timeLeft = (end - start) / 1000;
+                } else {
+                    timeLeft = parseInt(document.getElementById('time').value) * 60 || timeLeft;
+                }
                 rate = parseInt(document.getElementById('rate').value) || rate;
                 participants = parseInt(document.getElementById('participants').value) || participants;
                 running = true;
@@ -127,18 +190,24 @@
 
         function resetCountdown() {
             running = false;
-            document.getElementById('time-left').innerHTML = '<span class="japanese-text">残り時間: </span><span class="seven-segment">00:00</span>';
-            document.getElementById('elapsed-time').innerHTML = '<span class="japanese-text">経過時間: </span><span class="seven-segment">00:00</span>';
-            document.getElementById('cost').innerHTML = '<span class="japanese-text">コスト: </span><span class="seven-segment">0</span><span class="japanese-text"> 円</span>';
+            document.getElementById('time-left').innerHTML = '00:00';
+            document.getElementById('elapsed-time').innerHTML = '00:00';
+            document.getElementById('cost').innerHTML = '0';
             document.getElementById('time').value = "";
             document.getElementById('rate').value = "";
             document.getElementById('participants').value = "";
+            document.getElementById('start-time').value = "";
+            document.getElementById('end-time').value = "";
             timeLeft = 0;
             pausedTime = 0;
             totalCost = 0;
             if (updateId) {
                 clearTimeout(updateId);
                 updateId = null;
+            }
+            if (outputWindow && !outputWindow.closed) {
+                outputWindow.close();
+                outputWindow = null;
             }
         }
 
@@ -151,61 +220,140 @@
             if (running) {
                 const mins = Math.floor(timeLeft / 60);
                 const secs = timeLeft % 60;
-                document.getElementById('time-left').innerHTML = `<span class="japanese-text">残り時間: </span><span class="seven-segment">${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}</span>`;
+                document.getElementById('time-left').innerHTML = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 
                 const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
                 const elapsedMins = Math.floor(elapsedTime / 60);
                 const elapsedSecs = elapsedTime % 60;
-                document.getElementById('elapsed-time').innerHTML = `<span class="japanese-text">経過時間: </span><span class="seven-segment">${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}</span>`;
+                document.getElementById('elapsed-time').innerHTML = `${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}`;
 
                 if (timeLeft <= 0) {
                     document.getElementById('elapsed-time').style.color = "red";
-                    document.getElementById('time-left').innerHTML = '<span class="japanese-text">残り時間: </span><span class="seven-segment">00:00</span>';
+                    document.getElementById('time-left').innerHTML = '00:00';
+                    if (outputWindow && !outputWindow.closed) {
+                        outputWindow.document.getElementById('elapsed-time').style.color = "red";
+                        outputWindow.document.getElementById('time-left').innerHTML = '00:00';
+                    }
                 } else {
                     document.getElementById('elapsed-time').style.color = "Yellow";
+                    if (outputWindow && !outputWindow.closed) {
+                        outputWindow.document.getElementById('elapsed-time').style.color = "Yellow";
+                    }
                 }
 
-                totalCost = calculateCost(elapsedTime);
-                document.getElementById('cost').innerHTML = `<span class="japanese-text">コスト: </span><span class="seven-segment">${totalCost.toFixed()}</span><span class="japanese-text"> 円</span>`;
+                totalCost += calculateCost(1);
+                document.getElementById('cost').innerHTML = `${formatNumber(totalCost)}`;
+
+                if (outputWindow && !outputWindow.closed) {
+                    outputWindow.document.getElementById('time-left').innerHTML = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    outputWindow.document.getElementById('elapsed-time').innerHTML = `${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}`;
+                    outputWindow.document.getElementById('cost').innerHTML = `${formatNumber(totalCost)}`;
+                }
 
                 timeLeft -= 1;
                 updateId = setTimeout(updateCountdown, 1000);
             }
         }
 
-        function calculateCost(elapsedTime) {
-            return (rate / 3600) * elapsedTime * participants;
+        function calculateCost(seconds) {
+            return (rate / 3600) * seconds * participants;
         }
 
-        function increaseTime() {
-            const rateInput = document.getElementById('time');
-            rateInput.value = parseInt(rateInput.value) + 1 || 1;
+        function formatNumber(num) {
+            return num.toFixed().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        function decreaseTime() {
-            const rateInput = document.getElementById('time');
-            rateInput.value = Math.max(parseInt(rateInput.value) - 1, 0) || 0;
+        function updateCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('current-time').innerHTML = `${hours}:${minutes}:${seconds}`;
+            if (outputWindow && !outputWindow.closed) {
+                outputWindow.document.getElementById('current-time').innerHTML = `${hours}:${minutes}:${seconds}`;
+            }
         }
 
-        function increaseRate() {
-            const rateInput = document.getElementById('rate');
-            rateInput.value = parseInt(rateInput.value) + 1 || 1;
+        function openOutputWindow() {
+            if (outputWindow && !outputWindow.closed) {
+                outputWindow.focus();
+                return;
+            }
+            outputWindow = window.open('', 'OutputWindow', 'width=400,height=200,toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no');
+            outputWindow.document.write(`
+                <html lang="ja">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>出力</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@900&display=swap" rel="stylesheet">
+                    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+                    <style>
+                        body {
+                            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif;
+                            font-weight: 900;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            height: 100vh;
+                            margin: 0;
+                            font-size: 24px; /* 文字サイズを大きく */
+                            background-color: #000; /* 背景色を黒に */
+                            color: #FFD700; /* 文字色を黄に */
+                        }
+                        .seven-segment {
+                            font-family: 'Orbitron', monospace; /* 電卓風フォントを適用 */
+                            font-size: 32px; /* 文字サイズを調整 */
+                        }
+                        .japanese-text {
+                            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif; /* 日本語フォントを適用 */
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        td {
+                            padding: 5px;
+                            width: 33%; /* 各列の幅を固定 */
+                        }
+                        .right-align {
+                            text-align: right;
+                        }
+                        .left-align {
+                            text-align: left;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <table>
+                        <tr>
+                            <td class="right-align"><span class="japanese-text">現在時刻: </span></td>
+                            <td class="right-align"><span class="seven-segment" id="current-time">00:00:00</span></td>
+                            <td class="left-align"></td>
+                        </tr>
+                        <tr>
+                            <td class="right-align"><span class="japanese-text">残り時間: </span></td>
+                            <td class="right-align"><span class="seven-segment" id="time-left">00:00</span></td>
+                            <td class="left-align"></td>
+                        </tr>
+                        <tr>
+                            <td class="right-align"><span class="japanese-text">経過時間: </span></td>
+                            <td class="right-align"><span class="seven-segment" id="elapsed-time">00:00</span></td>
+                            <td class="left-align"></td>
+                        </tr>
+                        <tr>
+                            <td class="right-align"><span class="japanese-text">コスト: </span></td>
+                            <td class="right-align"><span class="seven-segment" id="cost">0</span></td>
+                            <td class="left-align"><span class="japanese-text"> 円</span></td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+            `);
         }
 
-        function decreaseRate() {
-            const rateInput = document.getElementById('rate');
-            rateInput.value = Math.max(parseInt(rateInput.value) - 1, 0) || 0;
-        }
-
-        function increaseParticipants() {
-            const participantsInput = document.getElementById('participants');
-            participantsInput.value = parseInt(participantsInput.value) + 1 || 1;
-        }
-
-        function decreaseParticipants() {
-            const participantsInput = document.getElementById('participants');
-            participantsInput.value = Math.max(parseInt(participantsInput.value) - 1, 0) || 0;
-        }
+        setInterval(updateCurrentTime, 1000);
     </script>
 </body>
 </html>
