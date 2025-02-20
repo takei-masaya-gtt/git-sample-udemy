@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>時is銭</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif;
@@ -16,7 +16,7 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            font-size: 24px; /* 文字サイズを大きく */
+            font-size: 24px;
         }
         .container {
             display: flex;
@@ -26,11 +26,10 @@
         .input-group {
             margin-bottom: 10px;
         }
-        .input-group label {
-            font-size: 18px; /* 文字サイズを少し小さく */
+        .input-group label, .input-group input, .button-group button {
+            font-size: 18px;
         }
         .input-group input {
-            font-size: 18px; /* 文字サイズを少し小さく */
             margin-left: 10px;
         }
         .button-group {
@@ -39,40 +38,40 @@
             margin-top: 10px;
         }
         .button-group button {
-            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif; /* フォントを合わせる */
-            font-size: 18px; /* 文字サイズを少し小さく */
+            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif;
             margin: 0 5px;
         }
         .output-group {
             margin-top: 20px;
-            font-size: 24px; /* 文字サイズを大きく */
+            font-size: 24px;
             border: 1px solid #000;
             padding: 10px;
-            width: 400px; /* 幅を広げる */
+            width: 350px;
             text-align: left;
-            background-color: #000; /* 背景色を黒に */
-            color: #FFD700; /* 文字色���黄に */
+            background-color: #000;
+            color: #FFD700;
         }
         .seven-segment {
-            font-family: 'Courier New', monospace; /* 等幅フォントを適用 */
-            font-size: 32px; /* 文字サイズを調整 */
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 32px;
         }
         .japanese-text {
-            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif; /* 日本語フォントを適用 */
+            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif;
         }
         .output-group div {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 5px; /* 項目間のスペースを狭める */
+            margin-bottom: 5px;
         }
         .output-group span {
             display: inline-block;
-            width: 150px; /* 固定幅を設定して位置を固定 */
+            width: 150px;
         }
         .output-group .cost {
-            text-align: right; /* 右端を揃える */
-            width: 200px; /* 幅を広げる */
+            text-align: right;
+            width: 200px;
         }
     </style>
 </head>
@@ -113,8 +112,8 @@
         </div>
         <div class="output-group">
             <div><span class="japanese-text">現在時刻: </span><span class="seven-segment" id="current-time">00:00:00</span></div>
-            <div><span class="japanese-text">残り時間: </span><span class="seven-segment" id="time-left">00:00</span></div>
-            <div><span class="japanese-text">経過時間: </span><span class="seven-segment" id="elapsed-time">00:00</span></div>
+            <div><span class="japanese-text">残り時間: </span><span class="seven-segment" id="time-left">00:00:00</span></div>
+            <div><span class="japanese-text">経過時間: </span><span class="seven-segment" id="elapsed-time">00:00:00</span></div>
             <div><span class="japanese-text">コスト: </span><span class="seven-segment cost" id="cost">0</span><span class="japanese-text"> 円</span></div>
         </div>
     </div>
@@ -190,8 +189,8 @@
 
         function resetCountdown() {
             running = false;
-            document.getElementById('time-left').innerHTML = '00:00';
-            document.getElementById('elapsed-time').innerHTML = '00:00';
+            document.getElementById('time-left').innerHTML = '00:00:00';
+            document.getElementById('elapsed-time').innerHTML = '00:00:00';
             document.getElementById('cost').innerHTML = '0';
             document.getElementById('time').value = "";
             document.getElementById('rate').value = "";
@@ -218,26 +217,29 @@
 
         function updateCountdown() {
             if (running) {
-                const mins = Math.floor(timeLeft / 60);
-                const secs = timeLeft % 60;
-                document.getElementById('time-left').innerHTML = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                const hoursLeft = Math.floor(Math.abs(timeLeft) / 3600);
+                const minsLeft = Math.floor((Math.abs(timeLeft) % 3600) / 60);
+                const secsLeft = Math.abs(timeLeft) % 60;
+                const timeLeftString = `${hoursLeft.toString().padStart(2, '0')}:${minsLeft.toString().padStart(2, '0')}:${secsLeft.toString().padStart(2, '0')}`;
+                document.getElementById('time-left').innerHTML = timeLeft < 0 ? `-${timeLeftString}` : timeLeftString;
 
                 const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-                const elapsedMins = Math.floor(elapsedTime / 60);
+                const elapsedHours = Math.floor(elapsedTime / 3600);
+                const elapsedMins = Math.floor((elapsedTime % 3600) / 60);
                 const elapsedSecs = elapsedTime % 60;
-                document.getElementById('elapsed-time').innerHTML = `${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}`;
+                document.getElementById('elapsed-time').innerHTML = `${elapsedHours.toString().padStart(2, '0')}:${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}`;
 
-                if (timeLeft <= 0) {
-                    document.getElementById('elapsed-time').style.color = "red";
-                    document.getElementById('time-left').innerHTML = '00:00';
+                if (timeLeft < 0) {
+                    document.querySelectorAll('.output-group span').forEach(span => span.style.color = "red");
                     if (outputWindow && !outputWindow.closed) {
-                        outputWindow.document.getElementById('elapsed-time').style.color = "red";
-                        outputWindow.document.getElementById('time-left').innerHTML = '00:00';
+                        outputWindow.document.querySelectorAll('.output-group span').forEach(span => span.style.color = "red");
+                        outputWindow.document.getElementById('time-left').innerHTML = `-${timeLeftString}`;
                     }
                 } else {
-                    document.getElementById('elapsed-time').style.color = "Yellow";
+                    document.querySelectorAll('.output-group span').forEach(span => span.style.color = "#FFD700");
                     if (outputWindow && !outputWindow.closed) {
-                        outputWindow.document.getElementById('elapsed-time').style.color = "Yellow";
+                        outputWindow.document.querySelectorAll('.output-group span').forEach(span => span.style.color = "#FFD700");
+                        outputWindow.document.getElementById('time-left').innerHTML = timeLeftString;
                     }
                 }
 
@@ -245,8 +247,7 @@
                 document.getElementById('cost').innerHTML = `${formatNumber(totalCost)}`;
 
                 if (outputWindow && !outputWindow.closed) {
-                    outputWindow.document.getElementById('time-left').innerHTML = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                    outputWindow.document.getElementById('elapsed-time').innerHTML = `${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}`;
+                    outputWindow.document.getElementById('elapsed-time').innerHTML = `${elapsedHours.toString().padStart(2, '0')}:${elapsedMins.toString().padStart(2, '0')}:${elapsedSecs.toString().padStart(2, '0')}`;
                     outputWindow.document.getElementById('cost').innerHTML = `${formatNumber(totalCost)}`;
                 }
 
@@ -279,7 +280,7 @@
                 outputWindow.focus();
                 return;
             }
-            outputWindow = window.open('', 'OutputWindow', 'width=400,height=200,toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no');
+            outputWindow = window.open('', 'OutputWindow', 'width=300,height=200,toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no');
             outputWindow.document.write(`
                 <html lang="ja">
                 <head>
@@ -287,6 +288,7 @@
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>出力</title>
                     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@900&display=swap" rel="stylesheet">
+                    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
                     <style>
                         body {
                             font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif;
@@ -297,16 +299,17 @@
                             justify-content: center;
                             height: 100vh;
                             margin: 0;
-                            font-size: 24px; /* 文字サイズを大きく */
-                            background-color: #000; /* 背景色を黒に */
-                            color: #FFD700; /* 文字色を黄に */
+                            font-size: 32px;
+                            background-color: #000;
+                            color: #FFD700;
                         }
                         .seven-segment {
-                            font-family: 'Courier New', monospace; /* 等幅フォントを適用 */
-                            font-size: 32px; /* 文字サイズを調整 */
+                            font-family: 'Roboto Mono', monospace;
+                            font-weight: 700;
+                            font-size: 32px;
                         }
                         .japanese-text {
-                            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif; /* 日本語フォントを適用 */
+                            font-family: 'Noto Serif JP', "Helvetica Neue", Arial, sans-serif;
                         }
                         table {
                             width: 100%;
@@ -314,7 +317,7 @@
                         }
                         td {
                             padding: 5px;
-                            width: 33%; /* 各列の幅を固定 */
+                            width: 49% 47% 4%;
                         }
                         .right-align {
                             text-align: right;
@@ -333,12 +336,12 @@
                         </tr>
                         <tr>
                             <td class="right-align"><span class="japanese-text">残り時間: </span></td>
-                            <td class="right-align"><span class="seven-segment" id="time-left">00:00</span></td>
+                            <td class="right-align"><span class="seven-segment" id="time-left">00:00:00</span></td>
                             <td class="left-align"></td>
                         </tr>
                         <tr>
                             <td class="right-align"><span class="japanese-text">経過時間: </span></td>
-                            <td class="right-align"><span class="seven-segment" id="elapsed-time">00:00</span></td>
+                            <td class="right-align"><span class="seven-segment" id="elapsed-time">00:00:00</span></td>
                             <td class="left-align"></td>
                         </tr>
                         <tr>
